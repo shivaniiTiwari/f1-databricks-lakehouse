@@ -1,0 +1,125 @@
+resources:
+  jobs:
+    job_formula1_lakehouse_incremental_refresh:
+      name: job_formula1_lakehouse_incremental_refresh
+      tasks:
+        - task_key: 01_Ingest_Circuits_file
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/02-bronze/01_Ingest_Circuits_files
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 01_transform_circuits_data
+          depends_on:
+            - task_key: 01_Ingest_Circuits_file
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/03.silver/01.Transform_Circuits_Data
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 02_Ingest_races_files
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/02-bronze/02_Ingest_Races_files
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 02_Trnsform_Races_Data
+          depends_on:
+            - task_key: 02_Ingest_races_files
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/03.silver/02.Transform_Races_Data
+            source: WORKSPACE
+          min_retry_interval_millis: 900000
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 01_Build_Races_Dimension
+          depends_on:
+            - task_key: 01_transform_circuits_data
+            - task_key: 02_Trnsform_Races_Data
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/04.gold/01.Build_races_dimension
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 03_Ingest_Constructors_files
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/02-bronze/03.Ingest_Constructors_files
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 03_Transform_Constructors_files
+          depends_on:
+            - task_key: 03_Ingest_Constructors_files
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/03.silver/03.Transform_Constructors_Data
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 04_Ingest_Drivers_files
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/02-bronze/04.Ingest_Drivers_files
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 04_Transform_Drivers_files
+          depends_on:
+            - task_key: 04_Ingest_Drivers_files
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/03.silver/04.Transform_Drivers_Data
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 05_Ingest_Results_file
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/02-bronze/04.Ingest_Results_files
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 05_Transform_Results_file
+          depends_on:
+            - task_key: 05_Ingest_Results_file
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/03.silver/05.Transform_Results_Data
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 06_Ingest_Sprints_file
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/02-bronze/05.Ingest_Sprints_files
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 06_Transform_Sprints_file
+          depends_on:
+            - task_key: 06_Ingest_Sprints_file
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/03.silver/06.Transform_Sprints_Data
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 04_Build_Results_fact
+          depends_on:
+            - task_key: 06_Transform_Sprints_file
+            - task_key: 05_Transform_Results_file
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/04.gold/04.Build_Results_fact
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 91_Build_Nationality_Region_Reference
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/04.gold/91.Build_Nationality
+              Region Reference
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 02_Build_constructor_dimension
+          depends_on:
+            - task_key: 03_Transform_Constructors_files
+            - task_key: 91_Build_Nationality_Region_Reference
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/04.gold/02.Build_constructor_dimension
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+        - task_key: 03_Build_driver_dim
+          depends_on:
+            - task_key: 04_Transform_Drivers_files
+            - task_key: 91_Build_Nationality_Region_Reference
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/04.gold/03.Build_driver_dim
+            source: WORKSPACE
+          environment_key: 01_Ingest_Circuits_file_environment
+      tags:
+        ResourceClass: SingleNode
+      queue:
+        enabled: true
+      environments:
+        - environment_key: 01_Ingest_Circuits_file_environment
+          spec:
+            environment_version: "6"
+      performance_target: PERFORMANCE_OPTIMIZED

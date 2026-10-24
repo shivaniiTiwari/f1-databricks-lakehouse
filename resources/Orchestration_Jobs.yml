@@ -1,0 +1,53 @@
+resources:
+  jobs:
+    job_formula1_incremental_batch_orchestration:
+      name: job_formula1_incremental_batch_orchestration
+      tasks:
+        - task_key: 01_Identify_Next_Batch
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/06.orchestration/01-Identify
+              Next Batch
+            source: WORKSPACE
+          existing_cluster_id: <cluster-id>
+        - task_key: Is_there_a_Batch_to_Process
+          depends_on:
+            - task_key: 01_Identify_Next_Batch
+          condition_task:
+            op: EQUAL_TO
+            left: "{{tasks.01_Identify_Next_Batch.values.has_batch}}"
+            right: "true"
+        - task_key: 02_Create_New_Batch
+          depends_on:
+            - task_key: Is_there_a_Batch_to_Process
+              outcome: "true"
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/06.orchestration/02-Create
+              Next Batch
+            base_parameters:
+              p_batch_id: "{{tasks.01_Identify_Next_Batch.values.p_batch_id}}"
+            source: WORKSPACE
+          existing_cluster_id: <cluster-id>
+        - task_key: run_job_formula1_lakehouse_incremental_refresh
+          depends_on:
+            - task_key: 02_Create_New_Batch
+          run_job_task:
+            job_id: <job-id>
+            job_parameters:
+              p_batch_id: "{{tasks.01_Identify_Next_Batch.values.p_batch_id}}"
+        - task_key: 03_Complete_batch
+          depends_on:
+            - task_key: run_job_formula1_lakehouse_incremental_refresh
+          notebook_task:
+            notebook_path: /Workspace/formula1project-incremental-load/06.orchestration/03.Complete
+              Batch
+            base_parameters:
+              p_batch_id: "{{tasks.01_Identify_Next_Batch.values.p_batch_id}}"
+            source: WORKSPACE
+          environment_key: 03_Complete_batch_environment
+      queue:
+        enabled: true
+      environments:
+        - environment_key: 03_Complete_batch_environment
+          spec:
+            environment_version: "6"
+      performance_target: PERFORMANCE_OPTIMIZED
