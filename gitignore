@@ -1,0 +1,36 @@
+# Secrets and local config
+.env
+*.env
+.databrickscfg
+databricks.cfg
+*.pem
+*.key
+secrets.*
+config.local.*
+
+# Databricks CLI / bundle local state
+.databricks/
+.bundle/
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# Exports and archives
+*.dbc
+*.zip
+
+# Local data (keep only small samples in sample_data/)
+*.parquet
+*.csv.gz
+data/
+!sample_data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
